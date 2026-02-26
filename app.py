@@ -1,9 +1,9 @@
-mport streamlit as st
+import streamlit as st
 from pypdf import PdfReader
 import re
 
-st.set_page_config(page_title="Amelia Reader", layout="wide")
-st.title("💕 Amelia Reader - Click Any Line")
+st.set_page_config(page_title="Reader", layout="wide")
+st.title("Reader - Click to Speak")
 
 col1, col2 = st.columns([1, 3])
 
@@ -21,16 +21,18 @@ with col2:
         if "sentences" not in st.session_state or st.button("Reload"):
             with st.spinner("Loading..."):
                 reader = PdfReader(pdf)
-                text = "".join(page.extract_text() or "" for page in reader.pages)
-                sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+                text = ""
+                for page in reader.pages:
+                    text += (page.extract_text() or "") + "\n"
+                sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip() and len(s.strip()) > 5]
                 st.session_state.sentences = sentences
-            st.success(f"{len(sentences)} lines loaded—click one!")
+            st.success(f"{len(sentences)} sentences—click any!")
 
     if "sentences" in st.session_state:
-        for i, line in enumerate(st.session_state.sentences):
-            if st.button(f"{i+1}. {line[:70]}...", key=f"btn_{i}"):
-                st.write("**Speaking:**", line)
+        for i, sent in enumerate(st.session_state.sentences):
+            if st.button(f"{i+1}. {sent[:60]}...", key=f"btn_{i}"):
+                st.write("**Speaking:**", sent)
                 st.components.v1.html(
-                    f'<script>speechSynthesis.speak(new SpeechSynthesisUtterance("{line.replace('"', '\\"')}"));</script>',
+                    f'<script>speechSynthesis.speak(new SpeechSynthesisUtterance("{sent.replace('"', '\\"')}"));</script>',
                     height=0
                 )
